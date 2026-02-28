@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-const sound = require('sound-play');
+import { exec } from 'child_process';
 
 let outputChannel: vscode.OutputChannel;
 
@@ -13,19 +13,32 @@ export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel('Terminal Sound');
     outputChannel.appendLine('Terminal Sound Alert extension activated.');
 
-    // ─── Task Event Listener ───────────────────────────
-    // Since reading direct terminal data is restricted/proposed API,
-    // we use `onDidEndTaskProcess` to play a sound if a task exits with an error code.
+    // ─── Task Event Listener (Tasks via Tasks API) ─────
     const taskListener = vscode.tasks.onDidEndTaskProcess((e) => {
         const config = vscode.workspace.getConfiguration('terminalSound');
         if (!config.get<boolean>('enabled', true)) {
             return;
         }
 
-        // e.exitCode is undefined for some tasks, or 0 for success.
-        // If it's explicitly strictly greater than 0, it means the task failed/errored.
         if (e.exitCode !== undefined && e.exitCode !== 0) {
             outputChannel.appendLine(`Task '${e.execution.task.name}' failed with exit code ${e.exitCode}`);
+            const now = Date.now();
+            if (now - lastSoundTime > DEBOUNCE_MS) {
+                lastSoundTime = now;
+                playSound(context);
+            }
+        }
+    });
+
+    // ─── Terminal Execution Listener (Manual Terminal Commands) ──
+    const terminalListener = vscode.window.onDidEndTerminalShellExecution?.((e) => {
+        const config = vscode.workspace.getConfiguration('terminalSound');
+        if (!config.get<boolean>('enabled', true)) {
+            return;
+        }
+
+        if (e.exitCode !== undefined && e.exitCode !== 0) {
+            outputChannel.appendLine(`Terminal command failed with exit code ${e.exitCode}`);
             const now = Date.now();
             if (now - lastSoundTime > DEBOUNCE_MS) {
                 lastSoundTime = now;
@@ -70,7 +83,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    context.subscriptions.push(taskListener, uploadCmd, testCmd);
+    const subscriptions = [taskListener, uploadCmd, testCmd];
+    if (terminalListener) {
+        subscriptions.push(terminalListener);
+    }
+    context.subscriptions.push(...subscriptions);
 
     outputChannel.appendLine(
         'Registered terminal listener and commands successfully.'
@@ -101,8 +118,21 @@ function playSound(context: vscode.ExtensionContext): void {
 
     outputChannel.appendLine('Playing sound: ' + soundFile);
 
-    sound.play(soundFile).catch((err: any) => {
-        outputChannel.appendLine('Sound playback error: ' + (err.message || err.toString()));
+    let playCommand = '';
+    if (process.platform === 'win32') {
+        const safePath = soundFile.replace(/'/g, "''");
+        const psScript = `$player = New-Object -ComObject WMPlayer.OCX.7; $player.URL = '${safePath}'; $player.settings.volume = 100; $player.controls.play(); Start-Sleep -Seconds 5;`;
+        playCommand = `powershell -WindowStyle Hidden -Command "${psScript}"`;
+    } else if (process.platform === 'darwin') {
+        playCommand = `afplay "${soundFile}"`;
+    } else {
+        playCommand = `paplay "${soundFile}" || aplay "${soundFile}"`;
+    }
+
+    exec(playCommand, { windowsHide: true }, (error) => {
+        if (error) {
+            outputChannel.appendLine('Sound playback error: ' + error.message);
+        }
     });
 }
 

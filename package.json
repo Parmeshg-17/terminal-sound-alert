@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "publisher": "parmeshgaud17",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.86.0"
   },
   "repository": {
     "type": "git",
@@ -54,11 +54,10 @@
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/play-sound": "^1.1.2",
-    "@types/vscode": "^1.80.0",
+    "@types/vscode": "^1.86.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "sound-play": "^1.1.0",
     "xterm": "^5.3.0"
   }
 }
