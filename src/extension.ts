@@ -7,7 +7,6 @@ let outputChannel: vscode.OutputChannel;
 
 // Debounce: avoid playing multiple sounds in rapid succession
 let lastSoundTime = 0;
-const DEBOUNCE_MS = 2000;
 
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel('Terminal Sound');
@@ -22,8 +21,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (e.exitCode !== undefined && e.exitCode !== 0) {
             outputChannel.appendLine(`Task '${e.execution.task.name}' failed with exit code ${e.exitCode}`);
+            const cooldown = config.get<number>('cooldownMs', 1200);
             const now = Date.now();
-            if (now - lastSoundTime > DEBOUNCE_MS) {
+            if (now - lastSoundTime > cooldown) {
                 lastSoundTime = now;
                 playSound(context);
             }
@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // ─── Terminal Execution Listener (Manual Terminal Commands) ──
-    const terminalListener = vscode.window.onDidEndTerminalShellExecution?.((e) => {
+    const terminalListener = (vscode.window as any).onDidEndTerminalShellExecution?.((e: any) => {
         const config = vscode.workspace.getConfiguration('terminalSound');
         if (!config.get<boolean>('enabled', true)) {
             return;
@@ -39,13 +39,18 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (e.exitCode !== undefined && e.exitCode !== 0) {
             outputChannel.appendLine(`Terminal command failed with exit code ${e.exitCode}`);
+            const cooldown = config.get<number>('cooldownMs', 1200);
             const now = Date.now();
-            if (now - lastSoundTime > DEBOUNCE_MS) {
+            if (now - lastSoundTime > cooldown) {
                 lastSoundTime = now;
                 playSound(context);
             }
         }
     });
+
+    // ─── Terminal Keyword Detection ──────────────────────────
+    // Removed because onDidWriteTerminalData is a proposed API and triggers false-positives when users type keywords.
+    // We now rely solely on exit codes via taskListener and terminalListener.
 
     // ─── Command: Upload Custom Sound ────────────────────
     const uploadCmd = vscode.commands.registerCommand(
@@ -74,6 +79,24 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
+    // ─── Command: Clear Custom Sound ─────────────────────
+    const clearCmd = vscode.commands.registerCommand(
+        'terminalSound.clearSound',
+        async () => {
+            await vscode.workspace
+                .getConfiguration('terminalSound')
+                .update(
+                    'customSoundPath',
+                    undefined,
+                    vscode.ConfigurationTarget.Global
+                );
+
+            vscode.window.showInformationMessage(
+                `✅ Custom sound cleared! Using default Faaah sound.`
+            );
+        }
+    );
+
     // ─── Command: Test Sound ─────────────────────────────
     const testCmd = vscode.commands.registerCommand(
         'terminalSound.testSound',
@@ -83,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    const subscriptions = [taskListener, uploadCmd, testCmd];
+    const subscriptions = [taskListener, uploadCmd, clearCmd, testCmd];
     if (terminalListener) {
         subscriptions.push(terminalListener);
     }
@@ -122,11 +145,13 @@ function playSound(context: vscode.ExtensionContext): void {
     if (process.platform === 'win32') {
         const safePath = soundFile.replace(/'/g, "''");
         const psScript = `$player = New-Object -ComObject WMPlayer.OCX.7; $player.URL = '${safePath}'; $player.settings.volume = 100; $player.controls.play(); Start-Sleep -Seconds 5;`;
-        playCommand = `powershell -WindowStyle Hidden -Command "${psScript}"`;
+        const base64Script = Buffer.from(psScript, 'utf16le').toString('base64');
+        playCommand = `powershell -WindowStyle Hidden -EncodedCommand ${base64Script}`;
     } else if (process.platform === 'darwin') {
         playCommand = `afplay "${soundFile}"`;
     } else {
-        playCommand = `paplay "${soundFile}" || aplay "${soundFile}"`;
+        // Fallback multiple players for Linux environments
+        playCommand = `paplay "${soundFile}" || aplay "${soundFile}" || ffplay -nodisp -autoexit "${soundFile}" 2>/dev/null || mpg123 -q "${soundFile}" || mpg321 -q "${soundFile}" || play -q "${soundFile}"`;
     }
 
     exec(playCommand, { windowsHide: true }, (error) => {

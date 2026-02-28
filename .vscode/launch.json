@@ -8,7 +8,7 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--enable-proposed-api",
-                "parmesh.terminal-sound-alert"
+                "parmeshgaud17.terminal-sound-alert"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"

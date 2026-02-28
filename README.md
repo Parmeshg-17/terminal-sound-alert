@@ -1,47 +1,64 @@
-# Terminal Error Sound Alert 🔊
+# terminal-sound-alert
 
-A VS Code extension that plays a sound when your terminal outputs an error.
+`terminal-sound-alert` is a lightweight VS Code extension that listens to terminal commands and task executions, and plays a meme sound whenever a command fails with an error exit code.
 
-## Features
+By default, it plays the bundled `faaah.mp3`. You can also configure a custom sound file.
 
-- **Automatic error detection** — Listens to terminal output and matches configurable error keywords
-- **Custom sounds** — Upload your own `.mp3`, `.wav`, or `.ogg` file
-- **Bundled default** — Comes with a built-in error beep
-- **Cross-platform** — Works on Windows, macOS, and Linux
-- **Debounced** — Won't spam sounds for rapid error output
+## ✨ Features
+- Automatically detects when a terminal command or VS Code task finishes with an error (non-zero exit code).
+- Plays a bundled meme sound on failure.
+- Supports custom audio files via settings.
+- Configurable cooldown between sound plays to prevent spam.
+- Easy enable/disable toggle.
 
-## Commands
+## 📦 Installation
+### From vsix (Local)
+You can drag and drop the `.vsix` file into the Extensions pane in VS Code, or install it from the command line:
+```bash
+code --install-extension terminal-sound-alert-0.0.1.vsix
+```
 
-| Command | Description |
-|---------|-------------|
-| `Terminal Sound: Upload Custom Sound` | Pick a custom audio file to use |
-| `Terminal Sound: Test Sound` | Play the current sound to verify it works |
+## 🔍 How it Works
+`terminal-sound-alert` uses native VS Code Shell Integration events. Custom keyword scanning has been disabled to prevent false positives when typing characters that match error words. 
 
-## Settings
+Instead of scanning all output, it triggers accurately under these conditions:
+1. **VS Code Tasks**: Any task that returns a non-zero exit code.
+2. **Terminal Shell Execution**: Any command typed in the integrated terminal that returns a non-zero exit code.
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `terminalSound.enabled` | `true` | Enable/disable terminal error sounds |
-| `terminalSound.customSoundPath` | `""` | Path to your custom sound file |
-| `terminalSound.errorKeywords` | `["error", "command not found", ...]` | Keywords that trigger the sound |
+If a failure occurs, the sound will play (subject to cooldown settings).
 
-## Quick Start
+## 🎮 Commands
+Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
-1. Press **F5** in VS Code while in this project to launch the Extension Development Host
-2. Open a terminal in the new window
-3. Type a bad command like `blahblahcommand` and press Enter
-4. Hear the error sound! 🔊
+- **Faaah: Select Custom Sound** — Choose a custom audio file
+- **Faaah: Clear Custom Sound** — Reset to default bundled sound
+- **Faaah: Play Test Sound** — Test the currently configured sound
 
-## Customizing Error Keywords
+## ⚙️ Settings
+You can configure the extension in:
 
-Open **Settings** → search for `terminalSound.errorKeywords` → add or remove keywords to match your workflow.
+`Settings → Extensions → Terminal Sound Alert`
 
-## How It Works
+Available options:
 
-The extension hooks into `vscode.window.onDidWriteTerminalData` (proposed API) which fires every time the terminal outputs text. It scans that text for configured error keywords and, when found, runs a platform-specific audio playback command.
+- `terminalSound.enabled` (default: `true`)
+Enable or disable the extension.
 
-> **Note**: This extension uses a proposed VS Code API (`terminalDataWriteEvent`). It works in the Extension Development Host and with builds that enable proposed APIs. For published extensions, you would need to adopt stable APIs once available.
+- `terminalSound.customSoundPath` (default: empty)
+Path to a custom audio file.
 
-## License
+- `terminalSound.cooldownMs` (default: `1200`)
+Minimum delay (in milliseconds) between sound plays.
 
-MIT
+## 🖥 Platform Support
+- **macOS** — Uses `afplay`
+- **Linux** — Tries `paplay`, `aplay`, `ffplay`, `mpg123`, `mpg321`, then `play`
+- **Windows** — Uses PowerShell media playback
+
+Terminal keyword detection relies on VS Code shell integration events.
+
+## 📝 Notes
+- Shell integration must be enabled for reliable detection.
+- Very rapid error output may be rate-limited by the cooldown setting.
+
+Enjoy your terminal errors — now with sound effects.
