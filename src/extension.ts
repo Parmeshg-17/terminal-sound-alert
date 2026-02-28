@@ -13,40 +13,26 @@ export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel('Terminal Sound');
     outputChannel.appendLine('Terminal Sound Alert extension activated.');
 
-    // ─── Terminal Data Listener ───────────────────────────
-    // Uses the proposed `onDidWriteTerminalData` API to intercept
-    // all text written to any terminal instance.
-    const terminalListener = (vscode.window as any).onDidWriteTerminalData(
-        (e: { terminal: vscode.Terminal; data: string }) => {
-            const config = vscode.workspace.getConfiguration('terminalSound');
-            if (!config.get<boolean>('enabled', true)) {
-                return;
-            }
+    // ─── Task Event Listener ───────────────────────────
+    // Since reading direct terminal data is restricted/proposed API,
+    // we use `onDidEndTaskProcess` to play a sound if a task exits with an error code.
+    const taskListener = vscode.tasks.onDidEndTaskProcess((e) => {
+        const config = vscode.workspace.getConfiguration('terminalSound');
+        if (!config.get<boolean>('enabled', true)) {
+            return;
+        }
 
-            const data = e.data.toLowerCase();
-            const keywords: string[] = config.get<string[]>('errorKeywords', [
-                'error',
-                'command not found',
-                'not recognized',
-                'failed',
-                'exception',
-                'denied',
-                'fatal',
-            ]);
-
-            const isError = keywords.some((keyword) =>
-                data.includes(keyword.toLowerCase())
-            );
-
-            if (isError) {
-                const now = Date.now();
-                if (now - lastSoundTime > DEBOUNCE_MS) {
-                    lastSoundTime = now;
-                    playSound(context);
-                }
+        // e.exitCode is undefined for some tasks, or 0 for success.
+        // If it's explicitly strictly greater than 0, it means the task failed/errored.
+        if (e.exitCode !== undefined && e.exitCode !== 0) {
+            outputChannel.appendLine(`Task '${e.execution.task.name}' failed with exit code ${e.exitCode}`);
+            const now = Date.now();
+            if (now - lastSoundTime > DEBOUNCE_MS) {
+                lastSoundTime = now;
+                playSound(context);
             }
         }
-    );
+    });
 
     // ─── Command: Upload Custom Sound ────────────────────
     const uploadCmd = vscode.commands.registerCommand(
@@ -84,7 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    context.subscriptions.push(terminalListener, uploadCmd, testCmd);
+    context.subscriptions.push(taskListener, uploadCmd, testCmd);
 
     outputChannel.appendLine(
         'Registered terminal listener and commands successfully.'

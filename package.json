@@ -19,9 +19,6 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
-  "enabledApiProposals": [
-    "terminalDataWriteEvent"
-  ],
   "contributes": {
     "commands": [
       {
@@ -45,19 +42,6 @@
           "type": "boolean",
           "default": true,
           "description": "Enable/disable terminal error sounds"
-        },
-        "terminalSound.errorKeywords": {
-          "type": "array",
-          "default": [
-            "error",
-            "command not found",
-            "not recognized",
-            "failed",
-            "exception",
-            "denied",
-            "fatal"
-          ],
-          "description": "Keywords that trigger the error sound"
         }
       }
     }
@@ -74,6 +58,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "sound-play": "^1.1.0"
+    "sound-play": "^1.1.0",
+    "xterm": "^5.3.0"
   }
 }
