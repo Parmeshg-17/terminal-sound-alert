@@ -7,13 +7,14 @@
   "engines": {
     "vscode": "^1.80.0"
   },
-"repository": {
-  "type": "git",
-  "url": "https://github.com/Parmeshg-17/terminal-sound-alert",
-},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Parmeshg-17/terminal-sound-alert"
+  },
   "categories": [
     "Other"
   ],
+  "icon": "logo.ico",
   "activationEvents": [
     "onStartupFinished"
   ],
