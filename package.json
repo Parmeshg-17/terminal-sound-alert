@@ -1,0 +1,74 @@
+{
+  "name": "terminal-sound-alert",
+  "displayName": "Terminal Error Sound",
+  "description": "Plays a sound when the terminal shows an error and sound name - faaah",
+  "version": "0.0.1",
+  "publisher": "parmeshgaud17",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "enabledApiProposals": [
+    "terminalDataWriteEvent"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "terminalSound.uploadSound",
+        "title": "Terminal Sound: Upload Custom Sound"
+      },
+      {
+        "command": "terminalSound.testSound",
+        "title": "Terminal Sound: Test Sound"
+      }
+    ],
+    "configuration": {
+      "title": "Terminal Sound Alert",
+      "properties": {
+        "terminalSound.customSoundPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to your custom sound file (.mp3 or .wav)"
+        },
+        "terminalSound.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable terminal error sounds"
+        },
+        "terminalSound.errorKeywords": {
+          "type": "array",
+          "default": [
+            "error",
+            "command not found",
+            "not recognized",
+            "failed",
+            "exception",
+            "denied",
+            "fatal"
+          ],
+          "description": "Keywords that trigger the error sound"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/play-sound": "^1.1.2",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "sound-play": "^1.1.0"
+  }
+}
