@@ -34,7 +34,7 @@ Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 - **Faaah: Clear Custom Sound** — Reset to default bundled sound
 - **Faaah: Play Test Sound** — Test the currently configured sound
 
-## ⚙️ Settings
+## ⚙️ Setting
 You can configure the extension in:
 
 `Settings → Extensions → Terminal Sound Alert`
