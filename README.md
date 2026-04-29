@@ -39,7 +39,7 @@ You can configure the extension in:
 
 `Settings → Extensions → Terminal Sound Alert`
 
-Available options:
+Available options:-
 
 - `terminalSound.enabled` (default: `true`)
 Enable or disable the extension.
