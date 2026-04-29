@@ -61,4 +61,4 @@ Terminal keyword detection relies on VS Code shell integration events.
 - Shell integration must be enabled for reliable detection.
 - Very rapid error output may be rate-limited by the cooldown setting.
 
-Enjoy your terminal errors — now with sound effects.
+Enjoy your terminal errors — now with sound effects!
